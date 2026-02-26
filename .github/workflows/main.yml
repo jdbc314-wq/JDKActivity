@@ -8,13 +8,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: JDKActivity
 
     steps:
       - uses: actions/checkout@v4
-
+i
       - uses: actions/setup-java@v4
         with:
           java-version: '17'
@@ -23,7 +20,7 @@ jobs:
       - uses: android-actions/setup-android@v3
 
       - name: Build APK
-        run: gradle assembleDebug
+        run: cd JDKActivity && gradle assembleDebug
 
       - uses: actions/upload-artifact@v4
         with:
