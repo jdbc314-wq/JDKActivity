@@ -9,44 +9,55 @@ jobs:
         with:
           java-version: '17'
           distribution: temurin
+
       - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.4'
+          cache-disabled: true
+
       - name: Build APK
         run: |
           mkdir -p proj/app/src/main/java/com/jdk/activity
           mkdir -p proj/app/src/main/res/layout
           mkdir -p proj/app/src/main/res/values
-          mkdir -p proj/app/src/main/res/mipmap-hdpi
 
-          cat > proj/settings.gradle << 'EOF'
+          cat > proj/settings.gradle << 'SETTEOF'
+          pluginManagement {
+            repositories { google(); mavenCentral(); gradlePluginPortal() }
+          }
+          dependencyResolutionManagement {
+            repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+            repositories { google(); mavenCentral() }
+          }
           rootProject.name = "JDKActivity"
           include ':app'
-          EOF
+          SETTEOF
 
-          cat > proj/build.gradle << 'EOF'
+          cat > proj/build.gradle << 'BUILDEOF'
           plugins { id 'com.android.application' version '8.2.0' apply false }
-          EOF
+          BUILDEOF
 
-          cat > proj/app/build.gradle << 'EOF'
+          cat > proj/app/build.gradle << 'APPEOF'
           plugins { id 'com.android.application' }
           android {
             namespace 'com.jdk.activity'
             compileSdk 34
             defaultConfig {
               applicationId "com.jdk.activity"
-              minSdk 21
-              targetSdk 34
-              versionCode 1
-              versionName "1.0"
+              minSdk 21; targetSdk 34
+              versionCode 1; versionName "1.0"
             }
           }
-          EOF
+          APPEOF
 
-          cat > proj/app/src/main/AndroidManifest.xml << 'EOF'
+          cat > proj/app/src/main/AndroidManifest.xml << 'MANEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             <uses-permission android:name="android.permission.INTERNET"/>
             <application android:label="JDKActivity" android:hardwareAccelerated="true">
-              <activity android:name=".MainActivity" android:exported="true" android:configChanges="orientation|screenSize">
+              <activity android:name=".MainActivity" android:exported="true">
                 <intent-filter>
                   <action android:name="android.intent.action.MAIN"/>
                   <category android:name="android.intent.category.LAUNCHER"/>
@@ -54,27 +65,28 @@ jobs:
               </activity>
             </application>
           </manifest>
-          EOF
+          MANEOF
 
-          cat > proj/app/src/main/res/layout/activity_main.xml << 'EOF'
+          cat > proj/app/src/main/res/layout/activity_main.xml << 'LAYEOF'
           <?xml version="1.0" encoding="utf-8"?>
           <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
             android:layout_width="match_parent" android:layout_height="match_parent">
             <WebView android:id="@+id/webview"
               android:layout_width="match_parent" android:layout_height="match_parent"/>
           </RelativeLayout>
-          EOF
+          LAYEOF
 
-          cat > proj/app/src/main/res/values/strings.xml << 'EOF'
+          cat > proj/app/src/main/res/values/strings.xml << 'STREOF'
           <?xml version="1.0" encoding="utf-8"?>
           <resources><string name="app_name">JDKActivity</string></resources>
-          EOF
+          STREOF
 
-          cat > proj/app/src/main/java/com/jdk/activity/MainActivity.java << 'EOF'
+          cat > proj/app/src/main/java/com/jdk/activity/MainActivity.java << 'JAVAEOF'
           package com.jdk.activity;
           import android.app.Activity;
           import android.os.Bundle;
-          import android.webkit.*;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
           public class MainActivity extends Activity {
             WebView w;
             public void onCreate(Bundle s) {
@@ -90,11 +102,9 @@ jobs:
               if (w.canGoBack()) w.goBack(); else super.onBackPressed();
             }
           }
-          EOF
+          JAVAEOF
 
-          cd proj
-          gradle wrapper --gradle-version 8.4
-          ./gradlew assembleDebug --no-daemon
+          cd proj && gradle assembleDebug --no-daemon
 
       - uses: actions/upload-artifact@v4
         with:
