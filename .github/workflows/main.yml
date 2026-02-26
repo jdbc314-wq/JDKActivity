@@ -1,24 +1,103 @@
 name: Build APK JDKActivity
 on:
-  push:
-    branches: [main, master]
   workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Debug structure
-        run: find . -maxdepth 3 -name "build.gradle" -o -name "settings.gradle" | head -20
       - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: temurin
       - uses: android-actions/setup-android@v3
       - name: Build APK
-        run: gradle assembleDebug
+        run: |
+          mkdir -p proj/app/src/main/java/com/jdk/activity
+          mkdir -p proj/app/src/main/res/layout
+          mkdir -p proj/app/src/main/res/values
+          mkdir -p proj/app/src/main/res/mipmap-hdpi
+
+          cat > proj/settings.gradle << 'EOF'
+          rootProject.name = "JDKActivity"
+          include ':app'
+          EOF
+
+          cat > proj/build.gradle << 'EOF'
+          plugins { id 'com.android.application' version '8.2.0' apply false }
+          EOF
+
+          cat > proj/app/build.gradle << 'EOF'
+          plugins { id 'com.android.application' }
+          android {
+            namespace 'com.jdk.activity'
+            compileSdk 34
+            defaultConfig {
+              applicationId "com.jdk.activity"
+              minSdk 21
+              targetSdk 34
+              versionCode 1
+              versionName "1.0"
+            }
+          }
+          EOF
+
+          cat > proj/app/src/main/AndroidManifest.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <uses-permission android:name="android.permission.INTERNET"/>
+            <application android:label="JDKActivity" android:hardwareAccelerated="true">
+              <activity android:name=".MainActivity" android:exported="true" android:configChanges="orientation|screenSize">
+                <intent-filter>
+                  <action android:name="android.intent.action.MAIN"/>
+                  <category android:name="android.intent.category.LAUNCHER"/>
+                </intent-filter>
+              </activity>
+            </application>
+          </manifest>
+          EOF
+
+          cat > proj/app/src/main/res/layout/activity_main.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="match_parent" android:layout_height="match_parent">
+            <WebView android:id="@+id/webview"
+              android:layout_width="match_parent" android:layout_height="match_parent"/>
+          </RelativeLayout>
+          EOF
+
+          cat > proj/app/src/main/res/values/strings.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources><string name="app_name">JDKActivity</string></resources>
+          EOF
+
+          cat > proj/app/src/main/java/com/jdk/activity/MainActivity.java << 'EOF'
+          package com.jdk.activity;
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.webkit.*;
+          public class MainActivity extends Activity {
+            WebView w;
+            public void onCreate(Bundle s) {
+              super.onCreate(s);
+              setContentView(R.layout.activity_main);
+              w = findViewById(R.id.webview);
+              w.getSettings().setJavaScriptEnabled(true);
+              w.getSettings().setDomStorageEnabled(true);
+              w.setWebViewClient(new WebViewClient());
+              w.loadUrl("https://candid-empanada-81a561.netlify.app/");
+            }
+            public void onBackPressed() {
+              if (w.canGoBack()) w.goBack(); else super.onBackPressed();
+            }
+          }
+          EOF
+
+          cd proj
+          gradle wrapper --gradle-version 8.4
+          ./gradlew assembleDebug --no-daemon
+
       - uses: actions/upload-artifact@v4
         with:
           name: JDKActivity-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: proj/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
