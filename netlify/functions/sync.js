@@ -14,7 +14,7 @@ const { getStore } = require('@netlify/blobs');
 
 const STORE_NAME   = 'jdkactivity';
 const BLOB_KEY     = 'userdata';
-const AUTH_TOKEN   = process.env.JDK_SECRET_TOKEN; // variable d'env Netlify
+const AUTH_TOKEN   = process.env.nfp_KfcLhvPtWbUdeWeMugCyVFCpYWb6xuQp159d; // variable d'env Netlify
 
 function unauthorized(msg = 'Non autorisé') {
   return {
